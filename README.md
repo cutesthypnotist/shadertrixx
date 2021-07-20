@@ -2,7 +2,7 @@
 
 ~~CNLohr's repo for his Unity assets and other shader notes surrounding VRChat.  This largely contains stuff made by other people but I have kind of collected.~~
 
-Needed a repo to write down notes so I took CNLohr's repo otherwise I would probably just end up asking the same questions over and over again.
+Needed a repo to write down notes so I forked CNLohr's repo as a starting point since it's well organized otherwise I will probably just find myself asking the same questions over and over again.
 
 ## TODO List:
 
@@ -39,6 +39,8 @@ Needed a repo to write down notes so I took CNLohr's repo otherwise I would prob
         }
 ```
 
+## Diffuse Box Raytracing
+Sampling using grid points and not using monte carlo? Ask Lox to clarify because I do not understand.
 
 ## Projector Abuse?
 Wireframe avatar in avatar testing
