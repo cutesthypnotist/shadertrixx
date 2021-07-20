@@ -4,6 +4,37 @@
 
 Needed a repo to write down notes so I forked CNLohr's repo as a starting point since it's well organized otherwise I will probably just find myself asking the same questions over and over again.
 
+## Default values available for texture properties
+Ask Pema if he's okay submitting it as PR to his git repo
+
+```Default values available for texture properties:
+red
+gray
+grey
+linearGray
+linearGrey
+grayscaleRamp
+greyscaleRamp
+bump
+blackCube
+lightmap
+unity_Lightmap
+unity_LightmapInd
+unity_ShadowMask
+unity_DynamicLightmap
+unity_DynamicDirectionality
+unity_DynamicNormal
+unity_DitherMask
+_DitherMaskLOD
+_DitherMaskLOD2D
+unity_RandomRotation16
+unity_NHxRoughness
+unity_SpecCube0
+unity_SpecCube1```
+
+IE _MainTex ("Texture", 2D) = "unity_DynamicLightmap" {}
+
+
 ## Pema's shader-knowledge
 Add as git submodule.
 
