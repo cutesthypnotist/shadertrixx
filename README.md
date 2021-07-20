@@ -4,6 +4,9 @@
 
 Needed a repo to write down notes so I forked CNLohr's repo as a starting point since it's well organized otherwise I will probably just find myself asking the same questions over and over again.
 
+## Pema's shader-knowledge
+Add as git submodule.
+
 ## Avoid division by zero (Lyuma)
 I rarely have this problem but here.
 ```sign(X) * max(0.001, abs(X))```
@@ -67,8 +70,6 @@ I made this a while back which kind of illustrates it in 2D, except that I am ju
 ## Unity Cgincs
 Go through all of them meticulously.
 
-## Pema's shader-knowledge
-Add as git submodule.
 
 ## Multiple CRTs
 Revisit multiple CRT example.
