@@ -4,6 +4,10 @@
 
 Needed a repo to write down notes so I forked CNLohr's repo as a starting point since it's well organized otherwise I will probably just find myself asking the same questions over and over again.
 
+## Avoid division by zero (Lyuma)
+I rarely have this problem but here.
+```sign(X) * max(0.001, abs(X))```
+
 ## TODO List:
 
 ## Don't go without this shadowcaster code (you will probably need it)
@@ -38,6 +42,8 @@ Needed a repo to write down notes so I forked CNLohr's repo as a starting point 
             ENDCG
         }
 ```
+## Audiolink
+Look at github repo's examples and look at some of CNLohr's example code. 
 
 ## Diffuse Box Raytracing
 Sampling using grid points and not using monte carlo? Ask Lox to clarify because I do not understand.
@@ -47,9 +53,16 @@ Wireframe avatar in avatar testing
 Lox's photo booth
 https://vrchat.com/home/launch?worldId=wrld_6888716f-815b-4bcf-ab52-dc06e4c91033&instanceId=41732~region(us)
 
-Lyuma's
+Lyuma's "mirror" shader - triplanar mapped material onto a reflection of the players' avatars
 https://booth.pm/en/items/3136007
 Just using a camera and rendertextures with the whole cam.SetTargetBuffers(colorRT.colorBuffer, depthRT.depthBuffer)
+
+## SDF Collision
+From Pema 07172021 #raymarching
+I explained it a while back. For spheres, it's pretty simple. If you calculate the gradient of the distance field (the method you usually use for calculating normals) at the spheres position, you can march in the opposite direction, and if the distance from that is less than the spheres radius, you have a collision.
+
+To resolve the collision, you can translate the sphere along the gradient by an amount given by radius - distance_to_sdf. Works well enough to do collision for many distance estimators but gets worse the more inaccurate your estimate is & if you bend space too much.
+I made this a while back which kind of illustrates it in 2D, except that I am just evaluating the distance function once instead of actually marching (line 60). Didn't need to march since the sdf was sufficiently simple, but that isn't always the case. https://www.shadertoy.com/view/NlB3Dy
 
 ## Unity Cgincs
 Go through all of them meticulously.
