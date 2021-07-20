@@ -1,6 +1,102 @@
 # shadertrixx
 
-CNLohr's repo for his Unity assets and other shader notes surrounding VRChat.  This largely contains stuff made by other people but I have kind of collected.
+~~CNLohr's repo for his Unity assets and other shader notes surrounding VRChat.  This largely contains stuff made by other people but I have kind of collected.~~
+
+Needed a repo to write down notes so I took CNLohr's repo otherwise I would probably just end up asking the same questions over and over again.
+
+## TODO List:
+
+## Don't go without this shadowcaster code (you will probably need it)
+```hlsl        
+        // shadow caster rendering pass, implemented manually
+        // using macros from UnityCG.cginc
+        Pass
+        {
+            Tags {"LightMode"="ShadowCaster"}
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_shadowcaster
+            #include "UnityCG.cginc"
+
+            struct v2f { 
+                V2F_SHADOW_CASTER;
+            };
+
+            v2f vert(appdata_base v)
+            {
+                v2f o;
+                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
+                return o;
+            }
+
+            float4 frag(v2f i) : SV_Target
+            {
+                SHADOW_CASTER_FRAGMENT(i)
+            }
+            ENDCG
+        }
+```
+
+
+## Projector Abuse?
+Wireframe avatar in avatar testing
+Lox's photo booth
+https://vrchat.com/home/launch?worldId=wrld_6888716f-815b-4bcf-ab52-dc06e4c91033&instanceId=41732~region(us)
+
+Lyuma's
+https://booth.pm/en/items/3136007
+Just using a camera and rendertextures with the whole cam.SetTargetBuffers(colorRT.colorBuffer, depthRT.depthBuffer)
+
+## Unity Cgincs
+Go through all of them meticulously.
+
+## Pema's shader-knowledge
+Add as git submodule.
+
+## Multiple CRTs
+Revisit multiple CRT example.
+
+## FakeSSS and SSR
+See relevant includes..
+
+## Geometry Shaders + Cameras
+TODO: Simple pins type geometry shader.
+
+## Raymarching
+Bidirectional raymarching with spherecast inside and linear outside. Decent gains (made bee burger somewhat more tolerable, log fps)
+1. https://blog.uhawkvr.com/rendering/rendering-volumetric-clouds-using-signed-distance-fields/
+other approaches for fixed step size volumetric stuff is to increase the step size the further away you get
+
+### Jump Flooding Algorithm 
+Read these:
+
+1. https://www.comp.nus.edu.sg/~tants/jfa/i3d06.pdf
+2. https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/
+3. https://blog.demofox.org/2016/03/02/actually-making-signed-distance-field-textures-with-jfa/
+As a start, you could try just doing stupid simple flood fill. Every pixel just reads from its neighbors at each iteration
+
+Examples:
+
+1. SCRN example: https://github.com/SCRN-VRC/Raymarched-GPU-Particles-with-Screenspace-Physics/
+
+## CNLohr's ballpit mushrooms
+
+1. d4rkplayer's UNITY_BRDF macro instead of SurfaceOutput standard (check ballpit code for example)
+2. d4rkplayer's SV_Coverage for metallic shader
+3. d4rkplayer's better depth normals
+4. d4rkplayer's no forward add 
+5. Finish kernel coefficient generator
+
+## d4rkplayer's encode data to screen
+See encodedatatoscreen.shader
+
+## VRC Shader Discord
+Test unsorted shader/examples and keep only what's useful
+
+## liliToon
+Helpful library functions
 
 ## The most important trick
 
