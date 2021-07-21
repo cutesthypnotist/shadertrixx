@@ -35,6 +35,7 @@ unity_SpecCube1```
 IE _MainTex ("Texture", 2D) = "unity_DynamicLightmap" {}
 
 
+
 ## Pema's shader-knowledge
 Add as git submodule.
 
@@ -144,6 +145,16 @@ Test unsorted shader/examples and keep only what's useful
 
 ## liliToon
 Helpful library functions
+
+## Implement Lox 1-bounce Diffuse Box
+for 1-bounce, the irradiance of each point on the box is a surface integral of bounce points on the box
+i just approximate this integral by evaluating at quad corner points and mid points and taking weighted sum
+
+## I don't know
+UNITY_MATRIX_P._13 < 0 is true for left eye and false for the right
+what’s the code of telling which eye
+I think it was the sign of _23, let me check again
+nope was _13
 
 ## The most important trick
 
