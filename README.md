@@ -4,9 +4,22 @@
 
 Needed a repo to write down notes so I forked CNLohr's repo as a starting point since it's well organized otherwise I will probably just find myself asking the same questions over and over again.
 
-## Default values available for texture properties
-Ask Pema if he's okay submitting it as PR to his git repo
 
+Look at: https://gist.github.com/mattatz
+https://scrapbox.io/api/code/sayachang/Easing.hlsl/Easing.HLSL
+https://scrapbox.io/api/code/sayachang/Easing.GLSL/Easing.GLSL
+https://scrapbox.io/api/code/sayachang/Kmath.Easing.cs/Easing.cs
+https://github.com/setchi/EasingCore
+https://github.com/setchi/Unity-ShaderSketches
+https://neort.io/vAMwJKARLdhDZyEjEYWJlgYfnGZ2
+https://neort.io/popular
+https://noriben.booth.pm/items/3143798
+https://noriben.booth.pm/items/2802412
+
+
+## Default values available for texture properties
+
+Can also be edited without scripts but with "Debug-internal" inspector, activated by typing internal onto unitys "about" window
 ```Default values available for texture properties:
 red
 gray
@@ -34,10 +47,6 @@ unity_SpecCube1```
 
 IE _MainTex ("Texture", 2D) = "unity_DynamicLightmap" {}
 
-
-
-## Pema's shader-knowledge
-Add as git submodule.
 
 ## Avoid division by zero (Lyuma)
 I rarely have this problem but here.
@@ -77,8 +86,21 @@ I rarely have this problem but here.
             ENDCG
         }
 ```
+
+
+
 ## Audiolink
 Look at github repo's examples and look at some of CNLohr's example code. 
+
+## Instancing hacks
+Basics are at: https://github.com/pema99/shader-knowledge/blob/main/gpu-instancing.md
+
+Following up on this, you can try two-pass method:
+The first pass: a GPU-instance enabled material on each joint
+The second pass: a GPU-instance disabled material on the body renderer
+The second pass doesn't have instancing so when you query the instancing data it's from the first pass
+You can force the two passes sticking together by specifying their render queue.
+Okay apparently this doesn't work and it's better to juse use the sorting order trick.
 
 ## Diffuse Box Raytracing
 Sampling using grid points and not using monte carlo? Ask Lox to clarify because I do not understand.
@@ -90,7 +112,8 @@ https://vrchat.com/home/launch?worldId=wrld_6888716f-815b-4bcf-ab52-dc06e4c91033
 
 Lyuma's "mirror" shader - triplanar mapped material onto a reflection of the players' avatars
 https://booth.pm/en/items/3136007
-Just using a camera and rendertextures with the whole cam.SetTargetBuffers(colorRT.colorBuffer, depthRT.depthBuffer)
+Just using a camera and rendertextures with the whole cam.SetTargetBuffers(colorRT.colorBuffer, depthRT.depthBuffer) and a projector set up with a material.
+
 
 ## SDF Collision
 From Pema 07172021 #raymarching
@@ -131,11 +154,12 @@ Examples:
 
 ## CNLohr's ballpit mushrooms
 
-1. d4rkplayer's UNITY_BRDF macro instead of SurfaceOutput standard (check ballpit code for example)
+~~1. d4rkplayer's UNITY_BRDF macro instead of SurfaceOutput standard (check ballpit code for example)~~
 2. d4rkplayer's SV_Coverage for metallic shader
-3. d4rkplayer's better depth normals
-4. d4rkplayer's no forward add 
+~~3. d4rkplayer's better depth normals~~
+~~4. d4rkplayer's no forward add ~~
 5. Finish kernel coefficient generator
+6. Shrooms act as dispersors
 
 ## d4rkplayer's encode data to screen
 See encodedatatoscreen.shader
