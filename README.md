@@ -17,6 +17,84 @@ https://noriben.booth.pm/items/3143798
 https://noriben.booth.pm/items/2802412
 
 
+## shadow caster
+```hlsl
+        // shadow caster rendering pass, implemented manually
+        // using macros from UnityCG.cginc
+        Pass
+        {
+            Tags {"LightMode"="ShadowCaster"}
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_shadowcaster
+            #include "UnityCG.cginc"
+
+            struct v2f { 
+                V2F_SHADOW_CASTER;
+            };
+
+            v2f vert(appdata_base v)
+            {
+                v2f o;
+                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
+                return o;
+            }
+
+            float4 frag(v2f i) : SV_Target
+            {
+                SHADOW_CASTER_FRAGMENT(i)
+            }
+            ENDCG
+        }```
+
+## Shadow caster with geometry
+
+```hlsl
+    Pass {
+        Name "ShadowCaster"
+        Tags { "LightMode" = "ShadowCaster" }
+        
+CGPROGRAM
+#pragma vertex vert
+#pragma fragment frag
+#pragma target 5.0
+#pragma multi_compile_shadowcaster
+#pragma multi_compile_instancing // allow instanced shadow pass for most of the shaders
+#include "UnityCG.cginc"
+
+struct v2f { 
+    V2F_SHADOW_CASTER;
+    UNITY_VERTEX_OUTPUT_STEREO
+};
+
+appdata_base vert( appdata_base v )
+{ return v; }
+
+[maxvertexcount(3)]
+void geom( triangle appdata_base in[3], inout TriangleStream<v2f> tristream )
+{
+  for (int ii = 0; ii < 3; ii++) {
+     appdata_base v = in[ii];
+     //your code goes here 
+    v2f o;
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+    TRANSFER_SHADOW_CASTER_NOPOS(o, o.pos);
+    tristream.Append(o);
+    }
+}
+
+float4 frag( v2f i ) : SV_Target
+{
+    SHADOW_CASTER_FRAGMENT(i)
+}
+ENDCG
+
+}
+```
+
 ## Default values available for texture properties
 
 Can also be edited without scripts but with "Debug-internal" inspector, activated by typing internal onto unitys "about" window
