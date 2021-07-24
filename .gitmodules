@@ -1,0 +1,3 @@
+[submodule "shader-knowledge"]
+	path = shader-knowledge
+	url = https://github.com/pema99/shader-knowledge.git
