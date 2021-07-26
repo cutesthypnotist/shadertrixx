@@ -56,41 +56,41 @@ https://noriben.booth.pm/items/2802412
         Name "ShadowCaster"
         Tags { "LightMode" = "ShadowCaster" }
         
-CGPROGRAM
-#pragma vertex vert
-#pragma fragment frag
-#pragma target 5.0
-#pragma multi_compile_shadowcaster
-#pragma multi_compile_instancing // allow instanced shadow pass for most of the shaders
-#include "UnityCG.cginc"
+        CGPROGRAM
+        #pragma vertex vert
+        #pragma fragment frag
+        #pragma target 5.0
+        #pragma multi_compile_shadowcaster
+        #pragma multi_compile_instancing // allow instanced shadow pass for most of the shaders
+        #include "UnityCG.cginc"
 
-struct v2f { 
-    V2F_SHADOW_CASTER;
-    UNITY_VERTEX_OUTPUT_STEREO
-};
+        struct v2f { 
+            V2F_SHADOW_CASTER;
+            UNITY_VERTEX_OUTPUT_STEREO
+        };
 
-appdata_base vert( appdata_base v )
-{ return v; }
+        appdata_base vert( appdata_base v )
+        { return v; }
 
-[maxvertexcount(3)]
-void geom( triangle appdata_base in[3], inout TriangleStream<v2f> tristream )
-{
-  for (int ii = 0; ii < 3; ii++) {
-     appdata_base v = in[ii];
-     //your code goes here 
-    v2f o;
-    UNITY_SETUP_INSTANCE_ID(v);
-    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-    TRANSFER_SHADOW_CASTER_NOPOS(o, o.pos);
-    tristream.Append(o);
-    }
-}
+        [maxvertexcount(3)]
+        void geom( triangle appdata_base in[3], inout TriangleStream<v2f> tristream )
+        {
+        for (int ii = 0; ii < 3; ii++) {
+            appdata_base v = in[ii];
+            //your code goes here 
+            v2f o;
+            UNITY_SETUP_INSTANCE_ID(v);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+            TRANSFER_SHADOW_CASTER_NOPOS(o, o.pos);
+            tristream.Append(o);
+            }
+        }
 
-float4 frag( v2f i ) : SV_Target
-{
-    SHADOW_CASTER_FRAGMENT(i)
-}
-ENDCG
+        float4 frag( v2f i ) : SV_Target
+        {
+            SHADOW_CASTER_FRAGMENT(i)
+        }
+    ENDCG
 
 }
 ```
@@ -173,11 +173,6 @@ Look at github repo's examples and look at some of CNLohr's example code.
 ## Instancing hacks
 Basics are at: https://github.com/pema99/shader-knowledge/blob/main/gpu-instancing.md
 
-Following up on this, you can try two-pass method:
-The first pass: a GPU-instance enabled material on each joint
-The second pass: a GPU-instance disabled material on the body renderer
-The second pass doesn't have instancing so when you query the instancing data it's from the first pass
-You can force the two passes sticking together by specifying their render queue.
 Okay apparently this doesn't work and it's better to juse use the sorting order trick.
 
 ## Diffuse Box Raytracing
@@ -236,8 +231,9 @@ Examples:
 2. d4rkplayer's SV_Coverage for metallic shader
 ~~3. d4rkplayer's better depth normals~~
 ~~4. d4rkplayer's no forward add ~~
-5. Finish kernel coefficient generator
-6. Shrooms act as dispersors
+~~5. Finish kernel coefficient generator~~
+~~6. Shrooms act as dispersors~~
+7. Reconsider force function on Shrooms (reverse impulse intensity*exp(1-radius) is okay but isn't any different from say, them colliding with an object normally)
 
 ## d4rkplayer's encode data to screen
 See encodedatatoscreen.shader
@@ -249,7 +245,7 @@ Test unsorted shader/examples and keep only what's useful
 Helpful library functions
 
 ## Implement Lox 1-bounce Diffuse Box
-for 1-bounce, the irradiance of each point on the box is a surface integral of bounce points on the box
+From Lox: for 1-bounce, the irradiance of each point on the box is a surface integral of bounce points on the box
 i just approximate this integral by evaluating at quad corner points and mid points and taking weighted sum
 
 ## I don't know
