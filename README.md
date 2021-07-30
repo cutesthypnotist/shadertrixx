@@ -17,6 +17,7 @@ we could try a seperate pass and rendertexture that generates normalmap in to re
 For every cell in the volume, get the UV on each depth texture that lines up with that cell. If all cameras see something at their respective UV, place a seed in the cell.
 With a cube of ortho cameras the "Get UV of each depth texture part" is pretty much just a matter of swizzling the coordinates of the cell and taking 2 of them as the UV
 i.e.:
+```hlsl
                 float f = _Front[volCoord.xy].r;
                 float b = _Back[uint2(volSize-1-volCoord.x, volCoord.y)].r;
                 float l = _Left[volCoord.zy].r;
@@ -25,7 +26,7 @@ i.e.:
                 float u = _Up[uint2(volCoord.x, volSize-1-volCoord.z)].r;
 
                 if (f > 0 && b > 0 && l > 0 && r > 0 && d > 0 && u > 0) ... something is here
-
+```
 Where you put the volSize - ... stuff will obviously depend on how your cameras are oriented and volCoord in this case is the just 3D coords of the cell
 btw make sure you read below if you want to know what volCoord is
 
