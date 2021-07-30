@@ -43,7 +43,7 @@ more pema
 jump flooding you store the coordinates of the seed that is closest to the texel in the texel itself, hence the texture format
 10 bits is enough to store 256 distinct values per channel
 
-geom shader extension d4rkplayer:
+d4rkplayer:
 for each pixel in each depth camera calculate world pos and then cell pos and put it in geom shader
 using geoms as arbitrary write ops is pretty powerful
 
