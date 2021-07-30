@@ -4,6 +4,135 @@
 
 Needed a repo to write down notes so I forked CNLohr's repo as a starting point since it's well organized otherwise I will probably just find myself asking the same questions over and over again.
 
+## tessellation.unitypackage
+The only method to reconstruct normal after tessellating that seems to work is bgolus's method for converting height to normal which uses ddx/ddy but anything to approximate the normal by n-tap depth sampling doesn't seem to work and idk we get really weird normals with tessellated edges 
+
+could try creating fake vertices by transforming tangents by the normal map output from depth
+
+we could try a seperate pass and rendertexture that generates normalmap in to rendertexture and read it back in as sanity check, another alternative is we can compare p1-p0 and p2-p0 and then cross product but also this could be related (as in the same exact problem) as to why it's problematic to raymarch heightmaps? (see this image by pema)
+![img](images/2-depth-rays-intersection-overshoot-distance.png)
+
+
+## pema 3d sdf jfa thing
+For every cell in the volume, get the UV on each depth texture that lines up with that cell. If all cameras see something at their respective UV, place a seed in the cell.
+With a cube of ortho cameras the "Get UV of each depth texture part" is pretty much just a matter of swizzling the coordinates of the cell and taking 2 of them as the UV
+i.e.:
+                float f = _Front[volCoord.xy].r;
+                float b = _Back[uint2(volSize-1-volCoord.x, volCoord.y)].r;
+                float l = _Left[volCoord.zy].r;
+                float r = _Right[uint2(volSize-1-volCoord.z, volCoord.y)].r;
+                float d = _Down[volCoord.xz].r;
+                float u = _Up[uint2(volCoord.x, volSize-1-volCoord.z)].r;
+
+                if (f > 0 && b > 0 && l > 0 && r > 0 && d > 0 && u > 0) ... something is here
+
+Where you put the volSize - ... stuff will obviously depend on how your cameras are oriented and volCoord in this case is the just 3D coords of the cell
+btw make sure you read below if you want to know what volCoord is
+
+
+d4rkplayer's cloning thing (keep this in mind)
+just invert proj matrix and yeet the screen pos + depth through it
+mul(inverse(UNITY_MATRIX_P), float4(screenPos.x, screenPos.y, depthTextureSample, 1))
+so 256 voxelcoordtexels 6 depth 4096x4096 1 sdf 4096x4096 1 color 4096x4096 1 seed 4096x4096  = 9 4k textures
+
+geom shader extension d4rkplayer:
+for each pixel in each depth camera calculate world pos and then cell pos and put it in geom shader
+using geoms as arbitrary write ops is pretty powerful
+i.e.: can do 
+
+
+
+OK so really the main point of this is not to copy paste the shader code or do even do exactly the same but this is here just only to conceptually illustrate  what the JFA is doing each pass except keep in mind the seed volume is just an input to the first pass and then the JFA passes handle the rest of it.
+from neitri:  aaand then you do something like this to build the 3d sdf, correct ?
+you run few iterations of shader with decreasing jump fill distance like 128, 64, 32, 16, 8, 4, 2
+input is the 1/0 seed volume, and previous result
+with every iteration you increase output resolution by 2
+every iteration result also serves as LOD for the sphere tracing
+int32 inCurrentCell;
+bool bIsSeedOccupied = false;
+for (int i=0; i<27; ++i)
+{
+    bIsSeedOccupied = bIsSeedOccupied || inSeed3dVolume[inCurrentCell + directions[i] * jumpFillDistance];
+}
+float shortestDistanceOfNeighbours = FLOAT_MAX;
+for (int i=0; i<27; ++i)
+{
+    shortestDistanceOfNeighbours = min(shortestDistanceOfNeighbours, inPreviousSdfResult[inCurrentCell + directions[i] * jumpFillDistance);
+}
+return min(shortestDistanceOfNeighbours, bIsSeedOccupied * jumpFillDistance);
+
+with every iteration you increase output resolution by 2
+every iteration result also serves as LOD for the sphere tracing
+## pema 3d vol indexing thing bmcommon.cginc 
+
+here's specifically JUST the important parts you need to know
+note that 4096 and 256 specifically have this property that sqrt of number cubed gives integer i.e: sqrt(256^3) = 4096
+won't work with 128 because sqrt(128^3) = some fraction of a whole number
+512 and 64 work because sqrt(64^3) = 512 if you need something smaller
+I forget the actual term for this  
+
+```hlsl
+static const uint densityTexSize = 4096;
+static const uint densityVolSize = 256;
+static const float invDensityTexSize = 2.0 / densityTexSize; // 2 to match size of cube
+
+
+uint Idx3to1(uint3 p, uint size) {
+    return p.x + size*p.y + size*size*p.z;
+}
+
+uint3 Idx1to3(uint idx, uint size) {
+    uint x = idx % size;
+    uint y = (idx / size) % size;
+    uint z = idx / (size * size);
+    return uint3(x, y, z);
+}
+
+uint Idx2to1(uint2 p, uint size)
+{
+    return p.x + size * p.y;
+}
+
+uint2 Idx1to2(uint idx, uint size)
+{
+    uint x = idx % size;
+    uint y = idx / size;
+    return uint2(x, size-1-y); // textures are usually flipped w.r.t world coords on y axis
+}
+
+uint2 VolToTex(uint3 volCoord)
+{
+    uint volIdx = Idx3to1(volCoord, densityVolSize);
+    uint2 texCoord = Idx1to2(volIdx, densityTexSize);
+    return texCoord;
+}
+
+uint3 TexToVol(uint2 texCoord)
+{
+    uint texIdx = Idx2to1(texCoord, densityTexSize);
+    uint3 volCoord = Idx1to3(texIdx, densityVolSize);
+    return volCoord;
+}```
+
+## Note about lights and particle systems
+You can drag a light as a thingy onto a particle system and this lets you get around the 1 light limit for avatars and you can use uimenu for culling mask. 
+
+## More projector fun to check out
+The white background is on a high render queue to make it render over players. The projector captures only the player layer, so it doesn't see the background in front. 
+
+The projected material has an even higher render queue than the background. So the projected clone renders over it.
+
+The GrabPass technique to get the original color of the avatar works, but I had to make sure to put another renderer in the scene on render queue lower than the background but higher than avatars, and with the same named GrabPass to make sure it grabs early. (So the GrabPass doesn't just see the white background)(edited)
+
+That setup can probably be improved, but I'm not really seeing an obvious way to do so.(edited)
+
+
+I did one grabpass
+
+Queue: player avatars, grabpass, clear, environment, player projector
+
+Yeah that's pretty much what I am doing. It's not really 2 grabpass, it's referring to an early named grabpass in a later stage (projector material)(edited)
+
 
 Look at: https://gist.github.com/mattatz
 https://scrapbox.io/api/code/sayachang/Easing.hlsl/Easing.HLSL
@@ -95,75 +224,26 @@ https://noriben.booth.pm/items/2802412
 }
 ```
 
-## Default values available for texture properties
+To access Unity's dither pattern texture:
+sampler3D _DitherMaskLOD;
+There are 16 patterns, the Z coordinate of the first pattern is 0, the coordinate for the second pattern is 0.0625, the third is 0.128, and so on
+#if SHADOWS_SEMITRANSPARENT
+    tex3D(_DitherMaskLOD, float3(i.vpos.xy, 0.0625));
+    or
+    tex3D(_DitherMaskLOD, float3(i.vpos.xy * 0.25, alpha * 0.9375)).a;
+#endif
+where vpos is screen-space position of fragment either through VPOS semantic or getting it manually
 
-Can also be edited without scripts but with "Debug-internal" inspector, activated by typing internal onto unitys "about" window
-```Default values available for texture properties:
-red
-gray
-grey
-linearGray
-linearGrey
-grayscaleRamp
-greyscaleRamp
-bump
-blackCube
-lightmap
-unity_Lightmap
-unity_LightmapInd
-unity_ShadowMask
-unity_DynamicLightmap
-unity_DynamicDirectionality
-unity_DynamicNormal
-unity_DitherMask
-_DitherMaskLOD
-_DitherMaskLOD2D
-unity_RandomRotation16
-unity_NHxRoughness
-unity_SpecCube0
-unity_SpecCube1```
-
-IE _MainTex ("Texture", 2D) = "unity_DynamicLightmap" {}
-
+unityFogFactor = exp2(-unityFogFactor)
+unityFogFactor = exp2(-unityFogFactor*unityFogFactor)
+#define UNITY_Z_0_FAR_FROM_CLIPSPACE(coord) max(((1.0-(coord)/_ProjectionParams.y)*_ProjectionParams.z),0)
+log2
 
 ## Avoid division by zero (Lyuma)
 I rarely have this problem but here.
 ```sign(X) * max(0.001, abs(X))```
 
 ## TODO List:
-
-## Don't go without this shadowcaster code (you will probably need it)
-```hlsl        
-        // shadow caster rendering pass, implemented manually
-        // using macros from UnityCG.cginc
-        Pass
-        {
-            Tags {"LightMode"="ShadowCaster"}
-
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_shadowcaster
-            #include "UnityCG.cginc"
-
-            struct v2f { 
-                V2F_SHADOW_CASTER;
-            };
-
-            v2f vert(appdata_base v)
-            {
-                v2f o;
-                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
-                return o;
-            }
-
-            float4 frag(v2f i) : SV_Target
-            {
-                SHADOW_CASTER_FRAGMENT(i)
-            }
-            ENDCG
-        }
-```
 
 
 
@@ -243,6 +323,94 @@ Test unsorted shader/examples and keep only what's useful
 
 ## liliToon
 Helpful library functions
+
+## Tessellation
+Tessellation is a doozy and won't make sense from a high-level perspective. Unfortunately catlikecoding's tutorial on tessellation is a good way to confuse you more. 
+
+I would recommend reading the specifications directly first:
+https://www.khronos.org/registry/OpenGL/index_gl.php
+https://www.khronos.org/opengl/wiki/Tessellation#Tessellation_levels
+
+Then look at the examples and questions/answers.
+
+https://www.reddit.com/r/Unity3D/comments/aaa8rn/tutorial_how_to_dynamically_tessellate_a_planar/
+https://stackoverflow.com/questions/37647181/how-triangle-patch-tessellation-is-done-using-edge-and-inner-tessellation-factor
+https://stackoverflow.com/questions/37900663/how-to-identify-the-id-of-the-current-vertex-during-the-tes-stage
+
+High level summary from the questions/answers:
+
+DX11 allows for three distinct shapes: triangles, quads, or isolines. For this tutorial, we'll be working with triangles.
+How does the Tessellation Pipeline function?
+
+The tessellation pipeline is separated into three stages: hull, tessellation, and domain.
+
+**Hull Program**
+
+Invoked once per patch (polygon), the hull stage takes one input and produces two output. Its input are the control points that make up a patch. Control points are essentially the original vertices that define the shape. For the output, it returns the control points as well as calculated tessellation factors. To return the two outputs, the hull program is actually made up of two separate functions that operate in parallel.
+
+**Tessellation Program**
+
+Thankfully, what would be the most challenging part of tessellation is handled for us internally. This stage takes in the control points and tessellation factors produced by the hull program and slices up the patch according to the defined domain (triangle, quad, isoline).
+
+**Domain Program**
+
+The purpose of the domain program is to take the subdivided points the tessellation program has produced, and turn them into vertices that can be rendered. To do this, it takes in the control points from the hull program, its tessellation factors, and, last but not least, the tessellation points.
+
+**Patch**
+
+Each patch which reaches the tessellation primitive generator (the step after the TCS), no matter how many vertices it has, is considered a single primitive to be tessellated. Your TCS here outputs 12 vertices in a patch, but the patch itself will still be a single triangle.
+
+Allowing you to control the number of vertices allows you to define what a "vertex" means for your tessellation algorithm. For example, a Bezier surface has 16 control pointsvertices, but it's still a quad. This allows a Bezier-based TES to take all 16 control points as inputs when generating vertex positions.
+
+Also, tessellation does not work based on asking how many triangles you get. It works based on how much subdivision you want. That's what the outer and inner tessellation levels define: the number of segments that the edges of the triangle will be tessellated into.
+
+The TES's inputs are the same values the TCS wrote. In the same order.
+
+The way tessellation works is that what is being tessellated is not your vertices written by the TCS. What is being tessellated is an abstract patch. The tessellation primitive generator generates "vertices" with respect to the abstract patch.
+
+The gl_TessCoord is what allows you to detect where a particular TES invocation is within the abstract patch. You then combine that with the TCS's output data (which are inputs to the TES) to generate the per-vertex values you need for that coordinate.
+
+gl_PrimitiveID will be the same for each TES invocation in a single patch.
+
+**Edges**
+
+For triangles, each of the first three "outer" gl_TessLevelOuter[] tessellation values control the subdivision of one of the three sides of the triangle, and the fourth value is unused.
+
+Only the first "inner" gl_TessLevelInner[0] value is used, to determine the subdivision of the the inner triangle. This inner level is more confusing than the outer level, so looking at a picture is better than trying to explain it.
+
+Here is a similar image to the accepted answer, but with the inner value row labels corrected, and a program you can use to experiment with your own values.
+
+The image source link on the accepted answer is currently broken (May 2019). Plus the row labeled "Inner Tesselation Factor" is off by one. The inner tessellation value of the first row is actually zero.
+
+![img](https://i.stack.imgur.com/bZFDd.png)
+
+The tessellation levels specify the number of edges that will be generated. Therefore, a tessellation level of 1 means one edge. AKA: no tessellation.
+
+So this explains the outer levels. Each edge is assigned an index in the outer tessellation levels array, as specified in the standard. You provided the tessellation levels 1, 2, and 3. Therefore, one edge is "subdivided" into one edge. A second is tessellated into 2 edges and the third into three.
+
+I suppose the confusing part is how the inner tessellation level works. Triangle tessellation is defined based on generating concentric triangles within the outer triangle. But the number of concentric triangles generated is half of the inner tessellation level, rounded down.
+
+Let N be the inner tessellation level. And let K go from 1 to N/2, rounded down. K therefore represents each concentric inner triangle, with K = 1 representing the outermost inner triangle (but not the outer triangle).
+
+The edges of an inner triangle are always tessellated into the same number of edges. The number of edges that an inner triangle edge is tessellated into is N - 2K.
+
+So if we have an inner tessellation level of 5, then there will be 2 inner triangles. The first inner triangle will have 3 edges and the second will have 1.
+
+But something odd happens in this equations when N is even. If you have N=4, then there will be 2 inner triangles. The first inner triangle will be tessellated into 4 - 2 * 1 = 2 edges. And the second will be tessellated into 4 - 2 * 2 = 0 edges.
+
+Now we have a Zen Koan: what does a triangle with no edges look like?
+
+It looks like a single vertex. Which is exactly what you have in the center. You have a single vertex, which has edges to the triangle surrounding it.
+
+As for the edges between triangles, that's just how it converts the various tessellated points to create a full set of triangles.
+
+The image below illustrates a triangle tessellated with various inner and uniform outer tessfactors:
+(the row labeled "Inner Tesselation Factor" is off by one. The inner tessellation value of the first row is actually zero, see the better image posted above)
+![img](https://i.stack.imgur.com/p68tW.png)
+
+Useful openGL maths: https://ogldev.org/index.html
+
+
 
 ## Implement Lox 1-bounce Diffuse Box
 From Lox: for 1-bounce, the irradiance of each point on the box is a surface integral of bounce points on the box
