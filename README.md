@@ -32,20 +32,29 @@ btw make sure you read below if you want to know what volCoord is
 
 
 d4rkplayer's cloning thing (keep this in mind)
+
 just invert proj matrix and yeet the screen pos + depth through it
+```hlsl
 mul(inverse(UNITY_MATRIX_P), float4(screenPos.x, screenPos.y, depthTextureSample, 1))
-so 256 voxelcoordtexels 6 depth 4096x4096 1 sdf 4096x4096 1 color 4096x4096 1 seed 4096x4096  = 9 4k textures
+```
+
+more pema
+8 4k textures, one for each pass. Depth textures are 256x since they only capture one side of the volume. No color texture. Seed texture is also 4k
+jump flooding you store the coordinates of the seed that is closest to the texel in the texel itself, hence the texture format
+10 bits is enough to store 256 distinct values per channel
 
 geom shader extension d4rkplayer:
 for each pixel in each depth camera calculate world pos and then cell pos and put it in geom shader
 using geoms as arbitrary write ops is pretty powerful
-i.e.: can do 
 
 
 
-OK so really the main point of this is not to copy paste the shader code or do even do exactly the same but this is here just only to conceptually illustrate  what the JFA is doing each pass except keep in mind the seed volume is just an input to the first pass and then the JFA passes handle the rest of it.
-from neitri:  aaand then you do something like this to build the 3d sdf, correct ?
-you run few iterations of shader with decreasing jump fill distance like 128, 64, 32, 16, 8, 4, 2
+This is here not as source code implementation hinting but rather just to conceptually illustrate to you (me) effectively what JFA functionality provides for each pass 
+
+ keep in mind the seed volume is just an input to the first pass and then the JFA passes handle the rest of it.
+from neitri:
+something like this to build the 3d sdf (result)
+run few iterations of shader with decreasing jump fill distance like 128, 64, 32, 16, 8, 4, 2
 input is the 1/0 seed volume, and previous result
 with every iteration you increase output resolution by 2
 every iteration result also serves as LOD for the sphere tracing
@@ -64,6 +73,7 @@ return min(shortestDistanceOfNeighbours, bIsSeedOccupied * jumpFillDistance);
 
 with every iteration you increase output resolution by 2
 every iteration result also serves as LOD for the sphere tracing
+
 ## pema 3d vol indexing thing bmcommon.cginc 
 
 here's specifically JUST the important parts you need to know
